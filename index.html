@@ -74,12 +74,12 @@
     .nav-btn:active { transform: scale(0.98); }
     .nav-btn .icon { font-size: 26px; width: 40px; text-align: center; }
     .moderator-btn {
-      position: fixed; bottom: 16px; right: 16px; width: 44px; height: 44px;
-      border-radius: 50%; border: none; background: rgba(255,255,255,0.4);
-      font-size: 20px; cursor: pointer; opacity: 0.4; z-index: 100;
-      transition: opacity 0.3s;
+      position: fixed; bottom: 16px; right: 16px; width: 50px; height: 50px;
+      border-radius: 50%; border: none; background: rgba(255,140,0,0.85);
+      font-size: 22px; cursor: pointer; z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
-    .moderator-btn:hover { opacity: 1; }
+    .moderator-btn:active { transform: scale(0.92); }
     .screen {
       position: fixed; inset: 0; background: var(--bg); z-index: 50;
       overflow-y: auto; padding: 20px; padding-bottom: 40px; display: none;
@@ -271,7 +271,7 @@
   <script>
     const SUPABASE_URL = 'https://mxgwogzyxazdcdutyqky.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Z3dvZ3p5eGF6ZGNkdXR5cWt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzE0OTYsImV4cCI6MjEwNDcwNzQ5Nn0.B87HrpVL9co4-2m6E_obI5ZF3-vJqTilTQg4S2v4WPU';
-    
+
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -411,19 +411,45 @@
       } else {
         await db.from('Settings').insert({ Stream_url: url, Is_live: true });
       }
-      toast('Трансляция запущена!');
+          toast('Трансляция запущена!');
     }
     async function stopStream() {
       const { data: existing } = await db.from('Settings').select('id').limit(1).single();
       if (existing) {
-        await db.f
+        await db.from('Settings').update({ Is_live: false }).eq('id', existing.id);
+      }
+      toast('Трансляция остановлена');
+    }
+    async function addNews() {
+      const title = document.getElementById('mod-news-title').value;
+      const body = document.getElementById('mod-news-body').value;
+      const img = document.getElementById('mod-news-img').value;
+      if (!title) return toast('Введите заголовок');
+      const { error } = await db.from('News').insert({ Title: title, Text: body, Kartinka: img });
+      if (error) return toast('Ошибка: ' + error.message);
+      document.getElementById('mod-news-title').value = '';
+      document.getElementById('mod-news-body').value = '';
+      document.getElementById('mod-news-img').value = '';
+      toast('Новость опубликована!');
+    }
+    async function addVideo() {
+      const title = document.getElementById('mod-video-title').value;
+      const url = document.getElementById('mod-video-url').value;
+      if (!title || !url) return toast('Заполните название и ссылку');
+      const { error } = await db.from('Videos').insert({ Nazvanie: title, Ssylka: url });
+      if (error) return toast('Ошибка: ' + error.message);
+      document.getElementById('mod-video-title').value = '';
+      document.getElementById('mod-video-url').value = '';
+      toast('Видео добавлено!');
+    }
 
-
-          </script>
-</body>
-</html>
-    // Открытие модератора по адресу #moderator
     if (window.location.hash === '#moderator') {
       openScreen('login');
     }
-        
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js', { scope: '/tv6mk1-/' }).catch(() => {});
+    }
+  </script>
+</body>
+</html>
