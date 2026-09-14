@@ -1,17 +1,13 @@
 {
   "name": "ТВ 6МК-1",
   "short_name": "ТВ 6МК-1",
-  "description": "Школьное телевидение класса 6МК-1, Лицей 34, Мытищи",
-  "start_url": "/",
+  "start_url": "/tv6mk1-/",
+  "scope": "/tv6mk1-/",
+  "id": "/tv6mk1-/",
   "display": "standalone",
-  "background_color": "#87CEEB",
-  "theme_color": "#FF8C00",
-  "orientation": "portrait",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }
-
 
