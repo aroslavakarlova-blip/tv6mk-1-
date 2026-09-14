@@ -418,4 +418,80 @@
       openScreen('student');
     }
 
-    async
+        async function openStream() {
+      openScreen('stream');
+      const content = document.getElementById('stream-content');
+      content.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
+      const { data } = await db.from('Settings').select('*').limit(1).single();
+      if (!data || !data.Is_live || !data.Stream_url) {
+        content.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Трансляция скоро начнётся</p></div>';
+        return;
+      }
+      const url = data.Stream_url;
+      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        const id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+        content.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allow="autoplay" allowfullscreen></iframe>`;
+      } else {
+        content.innerHTML = `<iframe src="${escapeHtml(url)}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+      }
+    }
+
+    async function saveStream() {
+      const url = document.getElementById('mod-stream-url').value;
+      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
+      if (existing) {
+        await db.from('Settings').update({ Stream_url: url, Is_live: true }).eq('id', existing.id);
+      } else {
+        await db.from('Settings').insert({ Stream_url: url, Is_live: true });
+      }
+      toast('Трансляция запущена!');
+    }
+
+    async function stopStream() {
+      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
+      if (existing) {
+        await db.from('Settings').update({ Is_live: false }).eq('id', existing.id);
+      }
+      toast('Трансляция остановлена');
+    }
+
+    async function saveLinks() {
+      const support = document.getElementById('mod-support').value;
+      const channel = document.getElementById('mod-channel').value;
+      const site = document.getElementById('mod-site').value;
+      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
+      if (existing) {
+        await db.from('Settings').update({ support_url: support, channel_url: channel, site_url: site }).eq('id', existing.id);
+      } else {
+        await db.from('Settings').insert({ support_url: support, channel_url: channel, site_url: site });
+      }
+      links.support = support; links.channel = channel; links.site = site;
+      toast('Ссылки сохранены!');
+    }
+
+    async function addNews() {
+      const title = document.getElementById('mod-news-title').value;
+      const body = document.getElementById('mod-news-body').value;
+      const img = document.getElementById('mod-news-img').value;
+      if (!title) return toast('Введите заголовок');
+      const { error } = await db.from('News').insert({ Title: title, Text: body, Kartinka: img });
+      if (error) return toast('Ошибка: ' + error.message);
+      document.getElementById('mod-news-title').value = '';
+      document.getElementById('mod-news-body').value = '';
+      document.getElementById('mod-news-img').value = '';
+      toast('Новость опубликована!');
+    }
+
+    async function addVideo() {
+      const title = document.getElementById('mod-video-title').value;
+      const url = document.getElementById('mod-video-url').value;
+      if (!title || !url) return toast('Заполните название и ссылку');
+      const { error } = await db.from('Videos').insert({ Nazvanie: title, Ssylka: url });
+      if (error) return toast('Ошибка: ' + error.message);
+      document.getElementById('mod-video-title').value = '';
+      document.getElementById('mod-video-url').value = '';
+      toast('Видео добавлено!');
+    }
+  </script>
+</body>
+</html>
