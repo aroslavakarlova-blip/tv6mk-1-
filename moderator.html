@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ТВ 6МК-1 — Панель модератора</title>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Comfortaa', sans-serif;
+      background: linear-gradient(180deg, #B8E0F0 0%, #FFE5CC 100%);
+      min-height: 100vh; padding: 20px; color: #2C2C2C;
+    }
+    .wrap { max-width: 600px; margin: 0 auto; }
+    h1 { color: #FF8C00; text-align: center; margin-bottom: 20px; }
+    .card {
+      background: #fff; border-radius: 20px; padding: 20px; margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .section-title { font-size: 18px; font-weight: 700; color: #FF8C00; margin-bottom: 12px; }
+    input, textarea {
+      width: 100%; padding: 14px; border: 2px solid #FFE5CC; border-radius: 14px;
+      font-family: inherit; font-size: 15px; margin-bottom: 12px;
+    }
+    input:focus, textarea:focus { outline: none; border-color: #FF8C00; }
+    textarea { min-height: 100px; }
+    button {
+      border: none; border-radius: 14px; padding: 14px 24px; font-family: inherit;
+      font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 8px;
+    }
+    .primary { background: linear-gradient(135deg, #FF8C00, #FFB347); color: #fff; }
+    .secondary { background: #FFE5CC; color: #2C2C2C; }
+    .danger { background: #ff4444; color: #fff; }
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #FF8C00; color: #fff; padding: 12px 24px; border-radius: 30px;
+      font-size: 14px; font-weight: 700; opacity: 0; transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🍊 ТВ 6МК-1 — Модератор</h1>
+
+    <div class="card" id="loginCard">
+      <div class="section-title">🔐 Вход</div>
+      <input type="password" id="password" placeholder="Введите пароль">
+      <button class="primary" onclick="login()">Войти</button>
+    </div>
+
+    <div id="panel" class="hidden">
+      <div class="card">
+        <div class="section-title">📺 Трансляция</div>
+        <input type="text" id="streamUrl" placeholder="Ссылка на трансляцию">
+        <button class="primary" onclick="saveStream()">Сохранить и запустить</button>
+        <button class="secondary" onclick="stopStream()">Остановить</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title">📰 Новость</div>
+        <input type="text" id="newsTitle" placeholder="Заголовок">
+        <textarea id="newsBody" placeholder="Текст новости"></textarea>
+        <input type="text" id="newsImg" placeholder="Ссылка на картинку (необязательно)">
+        <button class="primary" onclick="addNews()">Опубликовать</button>
+      </div>
+
+      <div class="card">
+        <div class="section-title">🎬 Видео</div>
+        <input type="text" id="videoTitle" placeholder="Название видео">
+        <input type="text" id="videoUrl" placeholder="Ссылка (MP4, YouTube, VK)">
+        <button class="primary" onclick="addVideo()">Добавить видео</button>
+      </div>
+
+      <div class="card">
+        <button class="danger" onclick="logout()">Выйти</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://mxgwogzyxazdcdutyqky.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Z3dvZ3p5eGF6ZGNkdXR5cWt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzE0OTYsImV4cCI6MjEwNDcwNzQ5Nn0.B87HrpVL9co4-2m6E_obI5ZF3-vJqTilTQg4S2v4WPU';
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function toast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    async function sha256(text) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function login() {
+      const pwd = document.getElementById('password').value;
+      const hash = await sha256(pwd);
+      const correctHash = await sha256('yasenka8264k');
+      if (hash === correctHash) {
+        document.getElementById('loginCard').classList.add('hidden');
+        document.getElementById('panel').classList.remove('hidden');
+        toast('Добро пожаловать!');
+      } else {
+        toast('Неверный пароль');
+      }
+    }
+
+    function logout() {
+      document.getElementById('loginCard').classList.remove('hidden');
+      document.getElementById('panel').classList.add('hidden');
+      document.getElementById('password').value = '';
+    }
+
+    async function saveStream() {
+      const url = document.getElementById('streamUrl').value;
+      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
+      if (existing) {
+        await db.from('Settings').update({ Stream_url: url, Is_live: true }).eq('id', existing.id);
+      } else {
+        await db.from('Settings').insert({ Stream_url: url, Is_live: true });
+      }
+      toast('Трансляция запущена!');
+    }
+    async function stopStream() {
+      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
+      if (existing) {
+        await db.from('Settings').update({ Is_live: false }).eq('id', existing.id);
+      }
+      toast('Трансляция остановлена');
+    }
+    async function addNews() {
+      const title = document.getElementById('newsTitle').value;
+      const body = document.getElementById('newsBody').value;
+      const img = document.getElementById('newsImg').value;
+      if (!title) return toast('Введите заголовок');
+      const { error } = await db.from('News').insert({ Title: title, Text: body, Kartinka: img });
+      if (error) return toast('Ошибка: ' + error.message);
+      document.getElementById('newsTitle').value = '';
+      document.getElementById('newsBody').value = '';
+      document.getElementById('newsImg').value = '';
+      toast('Новость опубликована!');
+    }
+    async function addVideo() {
+      const title = document.getElementById('videoTitle').value;
+      const url = document.getElementById('videoUrl').value;
+      if (!title || !url) return toast('Заполните название и ссылку');
+      const { error } = await db.from('Videos').insert({ Nazvanie: title, Ssylka: url });
+      if (error) return toast('Ошибка: ' + error.message);
+      document.getElementById('videoTitle').value = '';
+      document.getElementById('videoUrl').value = '';
+      toast('Видео добавлено!');
+    }
+  </script>
+</body>
+    </html>
