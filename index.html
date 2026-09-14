@@ -152,7 +152,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const SUPABASE_URL = 'https://mxgwogzyxazdcdutyqky.supabase.co';
+        const SUPABASE_URL = 'https://mxgwogzyxazdcdutyqky.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Z3dvZ3p5eGF6ZGNkdXR5cWt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxMzE0OTYsImV4cCI6MjEwNDcwNzQ5Nn0.B87HrpVL9co4-2m6E_obI5ZF3-vJqTilTQg4S2v4WPU';
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -198,7 +198,6 @@
     }
     loadLinks();
 
-    // Долгое нажатие на логотип (тоже работает)
     let pressTimer;
     const logo = document.getElementById('logo');
     function startPress() { pressTimer = setTimeout(() => document.getElementById('modModal').classList.add('active'), 1500); }
@@ -246,6 +245,63 @@
       }
     }
 
+    // === РЕДАКТИРОВАНИЕ УЧЕНИКОВ ===
+    async function loadModStudents() {
+      const container = document.getElementById('mod-students-list');
+      container.innerHTML = '<p style="text-align:center; opacity:0.6;">Загрузка...</p>';
+      const { data, error } = await db.from('Students').select('*').order('Imya');
+      if (error || !data || data.length === 0) {
+        container.innerHTML = '<p style="text-align:center; opacity:0.6;">Список пуст</p>';
+        return;
+      }
+      container.innerHTML = data.map(s => `
+        <div class="student-edit" data-id="${s.id}">
+          <div class="row">
+            <div class="avatar-preview">${s.Avatar ? `<img src="${escapeHtml(s.Avatar)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : '🍊'}</div>
+            <div style="flex:1;">
+              <input type="text" class="s-avatar" placeholder="Ссылка на аватар" value="${escapeHtml(s.Avatar || '')}">
+            </div>
+          </div>
+          <input type="text" class="s-name" placeholder="Имя" value="${escapeHtml(s.Imya)}">
+          <textarea class="s-desc" placeholder="Описание" style="min-height:60px;">${escapeHtml(s.Opisanie || '')}</textarea>
+          <div class="actions">
+            <button class="primary-btn" onclick="saveStudent(${s.id}, this)">💾 Сохранить</button>
+            <button class="danger-btn" onclick="deleteStudent(${s.id})">🗑 Удалить</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function saveStudent(id, btn) {
+      const el = btn.closest('.student-edit');
+      const imya = el.querySelector('.s-name').value;
+      const opisanie = el.querySelector('.s-desc').value;
+      const avatar = el.querySelector('.s-avatar').value;
+      if (!imya) return toast('Введите имя');
+      const { error } = await db.from('Students').update({ Imya: imya, Opisanie: opisanie, Avatar: avatar }).eq('id', id);
+      if (error) return toast('Ошибка: ' + error.message);
+      toast('Сохранено!');
+      el.querySelector('.avatar-preview').innerHTML = avatar ? `<img src="${escapeHtml(avatar)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : '🍊';
+    }
+
+    async function deleteStudent(id) {
+      if (!confirm('Удалить ученика?')) return;
+      const { error } = await db.from('Students').delete().eq('id', id);
+      if (error) return toast('Ошибка: ' + error.message);
+      toast('Удалено');
+      loadModStudents();
+    }
+
+    async function addStudent() {
+      const imya = prompt('Имя ученика:');
+      if (!imya) return;
+      const { error } = await db.from('Students').insert({ Imya: imya, Opisanie: 'Этот ученик слишком загадочен, поэтому не рассказал о себе...', Avatar: '' });
+      if (error) return toast('Ошибка: ' + error.message);
+      toast('Ученик добавлен!');
+      loadModStudents();
+    }
+
+    // === ПРИВЕТСТВИЕ ===
     async function loadWelcome() {
       const el = document.getElementById('welcome-content');
       el.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
@@ -307,10 +363,9 @@
       } else {
         await db.from('Settings').insert({ about_text: text, about_video: video });
       }
-            toast('Раздел «Какие мы» сохранён!');
+      toast('Раздел «Какие мы» сохранён!');
     }
-
-    async function loadNews() {
+        async function loadNews() {
       const list = document.getElementById('news-list');
       list.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
       const { data, error } = await db.from('News').select('*').order('created_at', { ascending: false });
@@ -363,78 +418,4 @@
       openScreen('student');
     }
 
-    async function openStream() {
-      openScreen('stream');
-      const content = document.getElementById('stream-content');
-      content.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
-      const { data } = await db.from('Settings').select('*').limit(1).single();
-      if (!data || !data.Is_live || !data.Stream_url) {
-        content.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Трансляция скоро начнётся</p></div>';
-        return;
-      }
-      const url = data.Stream_url;
-      if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        const id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-        content.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allow="autoplay" allowfullscreen></iframe>`;
-      } else {
-        content.innerHTML = `<iframe src="${escapeHtml(url)}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
-      }
-    }
-
-    async function saveStream() {
-      const url = document.getElementById('mod-stream-url').value;
-      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
-      if (existing) {
-        await db.from('Settings').update({ Stream_url: url, Is_live: true }).eq('id', existing.id);
-      } else {
-        await db.from('Settings').insert({ Stream_url: url, Is_live: true });
-      }
-      toast('Трансляция запущена!');
-    }
-    async function stopStream() {
-      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
-      if (existing) {
-        await db.from('Settings').update({ Is_live: false }).eq('id', existing.id);
-      }
-      toast('Трансляция остановлена');
-    }
-
-    async function saveLinks() {
-      const support = document.getElementById('mod-support').value;
-      const channel = document.getElementById('mod-channel').value;
-      const site = document.getElementById('mod-site').value;
-      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
-      if (existing) {
-        await db.from('Settings').update({ support_url: support, channel_url: channel, site_url: site }).eq('id', existing.id);
-      } else {
-        await db.from('Settings').insert({ support_url: support, channel_url: channel, site_url: site });
-      }
-      links.support = support; links.channel = channel; links.site = site;
-      toast('Ссылки сохранены!');
-    }
-
-    async function addNews() {
-      const title = document.getElementById('mod-news-title').value;
-      const body = document.getElementById('mod-news-body').value;
-      const img = document.getElementById('mod-news-img').value;
-      if (!title) return toast('Введите заголовок');
-      const { error } = await db.from('News').insert({ Title: title, Text: body, Kartinka: img });
-      if (error) return toast('Ошибка: ' + error.message);
-      document.getElementById('mod-news-title').value = '';
-      document.getElementById('mod-news-body').value = '';
-      document.getElementById('mod-news-img').value = '';
-      toast('Новость опубликована!');
-    }
-    async function addVideo() {
-      const title = document.getElementById('mod-video-title').value;
-      const url = document.getElementById('mod-video-url').value;
-      if (!title || !url) return toast('Заполните название и ссылку');
-      const { error } = await db.from('Videos').insert({ Nazvanie: title, Ssylka: url });
-      if (error) return toast('Ошибка: ' + error.message);
-      document.getElementById('mod-video-title').value = '';
-      document.getElementById('mod-video-url').value = '';
-      toast('Видео добавлено!');
-    }
-  </script>
-</body>
-</html>
+    async
