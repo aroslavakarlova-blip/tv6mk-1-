@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
- <link rel="apple-touch-icon" href="icon-512.png">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#FF8C00">
@@ -169,7 +168,6 @@
 
   <button class="moderator-btn" onclick="openScreen('login')" title="Войти как модератор">🔐</button>
 
-  <!-- Экран: Приветствие -->
   <div class="screen" id="screen-welcome">
     <div class="screen-header">
       <button class="back-btn" onclick="closeScreen('welcome')">←</button>
@@ -182,7 +180,6 @@
     </div>
   </div>
 
-  <!-- Экран: Какие мы на самом деле -->
   <div class="screen" id="screen-about">
     <div class="screen-header">
       <button class="back-btn" onclick="closeScreen('about')">←</button>
@@ -190,12 +187,10 @@
     </div>
     <div class="card">
       <h3>6МК-1 — это...</h3>
-      <p>Мы — математический класс, но не только. Мы рисуем, занимаемся спортом, снимаем видео и пишем контрольные. Мы вместе учимся, дружим и делаем крутой контент.</p>
-      <p style="margin-top:10px;">Этот текст можно изменить в панели модератора.</p>
+      <p>Мы — математический класс, но не только. Мы рисуем, играем на гитаре, занимаемся спортом, снимаем видео и пишем код. Мы вместе учимся, дружим и делаем крутой контент.</p>
     </div>
   </div>
 
-  <!-- Экран: Трансляция -->
   <div class="screen" id="screen-stream">
     <div class="screen-header">
       <button class="back-btn" onclick="closeScreen('stream')">←</button>
@@ -204,7 +199,6 @@
     <div id="stream-content"></div>
   </div>
 
-  <!-- Экран: Новости -->
   <div class="screen" id="screen-news">
     <div class="screen-header">
       <button class="back-btn" onclick="closeScreen('news')">←</button>
@@ -213,7 +207,6 @@
     <div id="news-list"></div>
   </div>
 
-  <!-- Экран: Видео -->
   <div class="screen" id="screen-videos">
     <div class="screen-header">
       <button class="back-btn" onclick="closeScreen('videos')">←</button>
@@ -222,7 +215,6 @@
     <div id="videos-list"></div>
   </div>
 
-  <!-- Экран: Ученики -->
   <div class="screen" id="screen-students">
     <div class="screen-header">
       <button class="back-btn" onclick="closeScreen('students')">←</button>
@@ -231,7 +223,6 @@
     <div id="students-list"></div>
   </div>
 
-  <!-- Экран: Профиль ученика -->
   <div class="screen" id="screen-student">
     <div class="screen-header">
       <button class="back-btn" onclick="closeScreen('student')">←</button>
@@ -240,7 +231,6 @@
     <div id="student-content"></div>
   </div>
 
-  <!-- Экран: Вход модератора -->
   <div class="screen" id="screen-login">
     <div class="screen-header">
       <button class="back-btn" onclick="closeScreen('login')">←</button>
@@ -250,7 +240,6 @@
     <button class="primary-btn" onclick="login()">Войти</button>
   </div>
 
-  <!-- Экран: Панель модератора -->
   <div class="screen" id="screen-moderator">
     <div class="screen-header">
       <button class="back-btn" onclick="logout()">←</button>
@@ -280,19 +269,15 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // ========== НАСТРОЙКИ SUPABASE ==========
-    // const SUPABASE_URL = 'https://mxgwogzyxazdcdutyqky.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Z3dvZ3p5eGF6ZGNkdXR5cWt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3...';
-    // ========================================
-
+    const SUPABASE_URL = 'https://mxgwogzyxazdcdutyqky.supabase.co';
+    const SUPABASE_KEY = 'ВСТАВЬ СЮДА СВОЙ ANON KEY';
+    
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Тема
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (prefersDark) document.documentElement.setAttribute('data-theme', 'dark');
 
-    // Утилиты
     function toast(msg) {
       const t = document.getElementById('toast');
       t.textContent = msg;
@@ -308,7 +293,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
     }
     function escapeHtml(s) { return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-    // ========== НОВОСТИ ==========
     async function loadNews() {
       const list = document.getElementById('news-list');
       list.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
@@ -327,7 +311,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       `).join('');
     }
 
-    // ========== ВИДЕО ==========
     async function loadVideos() {
       const list = document.getElementById('videos-list');
       list.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
@@ -351,7 +334,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       }).join('');
     }
 
-    // ========== УЧЕНИКИ ==========
     async function loadStudents() {
       const list = document.getElementById('students-list');
       list.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
@@ -362,7 +344,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       }
       list.innerHTML = data.map(s => `
         <div class="card student-card" onclick="showStudent(${s.id})">
-          ${s.Avatar ? `<img class="avatar" src="${escapeHtml(s.Avatar)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'avatar',textContent:'🍊'}))">` : `<div class="avatar">🍊</div>`}
+          ${s.Avatar ? `<img class="avatar" src="${escapeHtml(s.Avatar)}">` : `<div class="avatar">🍊</div>`}
           <div><div class="name">${escapeHtml(s.Imya)}</div></div>
         </div>
       `).join('');
@@ -381,7 +363,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       openScreen('student');
     }
 
-    // ========== ТРАНСЛЯЦИЯ ==========
     async function openStream() {
       openScreen('stream');
       const content = document.getElementById('stream-content');
@@ -400,7 +381,6 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       }
     }
 
-    // ========== МОДЕРАТОР ==========
     async function sha256(text) {
       const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
       return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -412,4 +392,28 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
       if (hash === correctHash) {
         closeScreen('login');
         openScreen('moderator');
-        document.getElementById('mod
+        document.getElementById('mod-password').value = '';
+        toast('Добро пожаловать!');
+      } else {
+        toast('Неверный пароль');
+      }
+    }
+    function logout() {
+      closeScreen('moderator');
+      toast('Вы вышли из режима модератора');
+    }
+
+    async function saveStream() {
+      const url = document.getElementById('mod-stream-url').value;
+      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
+      if (existing) {
+        await db.from('Settings').update({ Stream_url: url, Is_live: true }).eq('id', existing.id);
+      } else {
+        await db.from('Settings').insert({ Stream_url: url, Is_live: true });
+      }
+      toast('Трансляция запущена!');
+    }
+    async function stopStream() {
+      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
+      if (existing) {
+        await db.f
