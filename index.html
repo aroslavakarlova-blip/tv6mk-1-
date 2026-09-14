@@ -56,6 +56,14 @@
     .modal-bg.active { display: flex; }
     .modal { background: #fff; border-radius: 20px; padding: 24px; max-width: 340px; width: 100%; }
     .modal h3 { color: #FF8C00; margin-bottom: 16px; text-align: center; }
+    .moderator-btn { position: fixed; bottom: 16px; right: 16px; width: 50px; height: 50px; border-radius: 50%; border: none; background: rgba(255,140,0,0.85); font-size: 22px; cursor: pointer; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .moderator-btn:active { transform: scale(0.92); }
+    .student-edit { background: var(--peach); border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+    .student-edit .row { display: flex; gap: 8px; align-items: center; }
+    .student-edit .avatar-preview { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: linear-gradient(135deg,#FFB347,#FF8C00); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .student-edit input { margin-bottom: 6px; padding: 10px; font-size: 14px; }
+    .student-edit .actions { display: flex; gap: 6px; }
+    .student-edit .actions button { padding: 8px 12px; font-size: 13px; margin: 0; width: auto; flex: 1; }
   </style>
 </head>
 <body>
@@ -79,6 +87,8 @@
     </div>
   </div>
 
+  <button class="moderator-btn" onclick="document.getElementById('modModal').classList.add('active')" title="Модератор">🔐</button>
+
   <div class="modal-bg" id="modModal">
     <div class="modal">
       <h3>🔐 Пароль модератора</h3>
@@ -88,14 +98,8 @@
     </div>
   </div>
 
-  <div class="screen" id="screen-welcome">
-    <div class="screen-header"><button class="back-btn" onclick="closeScreen('welcome')">←</button><h2>Приветствие</h2></div>
-    <div id="welcome-content"></div>
-  </div>
-  <div class="screen" id="screen-about">
-    <div class="screen-header"><button class="back-btn" onclick="closeScreen('about')">←</button><h2>Какие мы</h2></div>
-    <div id="about-content"></div>
-  </div>
+  <div class="screen" id="screen-welcome"><div class="screen-header"><button class="back-btn" onclick="closeScreen('welcome')">←</button><h2>Приветствие</h2></div><div id="welcome-content"></div></div>
+  <div class="screen" id="screen-about"><div class="screen-header"><button class="back-btn" onclick="closeScreen('about')">←</button><h2>Какие мы</h2></div><div id="about-content"></div></div>
   <div class="screen" id="screen-stream"><div class="screen-header"><button class="back-btn" onclick="closeScreen('stream')">←</button><h2>Трансляция</h2></div><div id="stream-content"></div></div>
   <div class="screen" id="screen-news"><div class="screen-header"><button class="back-btn" onclick="closeScreen('news')">←</button><h2>Новости</h2></div><div id="news-list"></div></div>
   <div class="screen" id="screen-videos"><div class="screen-header"><button class="back-btn" onclick="closeScreen('videos')">←</button><h2>Видео</h2></div><div id="videos-list"></div></div>
@@ -136,6 +140,10 @@
     <input type="text" id="mod-video-title" placeholder="Название">
     <input type="text" id="mod-video-url" placeholder="Ссылка на видео">
     <button class="primary-btn" onclick="addVideo()">Добавить</button>
+
+    <div class="section-title">👥 Ученики</div>
+    <button class="primary-btn" onclick="addStudent()">+ Добавить ученика</button>
+    <div id="mod-students-list"></div>
 
     <div class="section-title">⚙️</div>
     <button class="secondary-btn danger-btn" onclick="closeScreen('moderator')">Выйти</button>
@@ -190,6 +198,7 @@
     }
     loadLinks();
 
+    // Долгое нажатие на логотип (тоже работает)
     let pressTimer;
     const logo = document.getElementById('logo');
     function startPress() { pressTimer = setTimeout(() => document.getElementById('modModal').classList.add('active'), 1500); }
@@ -221,7 +230,6 @@
         document.getElementById('mod-support').value = links.support;
         document.getElementById('mod-channel').value = links.channel;
         document.getElementById('mod-site').value = links.site;
-        // Загружаем текущие тексты разделов
         try {
           const { data } = await db.from('Settings').select('*').limit(1).single();
           if (data) {
@@ -231,33 +239,32 @@
             if (data.about_video) document.getElementById('mod-about-video').value = data.about_video;
           }
         } catch(e) {}
+        loadModStudents();
         toast('Добро пожаловать!');
       } else {
         toast('Неверный пароль');
       }
     }
 
-    // ПРИВЕТСТВИЕ
     async function loadWelcome() {
       const el = document.getElementById('welcome-content');
       el.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
       try {
         const { data } = await db.from('Settings').select('welcome_text, welcome_video').limit(1).single();
-        const text = data?.welcome_text || 'Привет! Мы — ученики 6МК-1 Лицея 34, Мытищи. Это наше школьное телевидение: новости, видео, трансляции и всё о нашем классе.';
+        const text = data?.welcome_text || 'Привет! Мы — ученики 6МК-1 Лицея 34, Мытищи. Это наше школьное телевидение.';
         const video = data?.welcome_video || '';
         el.innerHTML = `<div class="card"><h3>Добро пожаловать!</h3><p>${escapeHtml(text)}</p></div>` + renderVideo(video);
       } catch(e) {
-        el.innerHTML = `<div class="card"><h3>Добро пожаловать!</h3><p>Привет! Мы — ученики 6МК-1 Лицея 34, Мытищи.</p></div>`;
+        el.innerHTML = `<div class="card"><h3>Добро пожаловать!</h3><p>Привет! Мы — ученики 6МК-1.</p></div>`;
       }
     }
 
-    // КАКИЕ МЫ
     async function loadAbout() {
       const el = document.getElementById('about-content');
       el.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
       try {
         const { data } = await db.from('Settings').select('about_text, about_video').limit(1).single();
-        const text = data?.about_text || 'Мы — математический класс, но не только. Мы рисуем, играем на гитаре, занимаемся спортом, снимаем видео и пишем код.';
+        const text = data?.about_text || 'Мы — математический класс, но не только. Мы рисуем, поём, снимаем видео.';
         const video = data?.about_video || '';
         el.innerHTML = `<div class="card"><h3>6МК-1 — это...</h3><p>${escapeHtml(text)}</p></div>` + renderVideo(video);
       } catch(e) {
@@ -265,7 +272,6 @@
       }
     }
 
-    // Рендер видео/картинки
     function renderVideo(url) {
       if (!url) return '';
       if (url.includes('youtube.com') || url.includes('youtu.be')) {
@@ -301,7 +307,7 @@
       } else {
         await db.from('Settings').insert({ about_text: text, about_video: video });
       }
-      toast('Раздел «Какие мы» сохранён!');
+            toast('Раздел «Какие мы» сохранён!');
     }
 
     async function loadNews() {
@@ -318,4 +324,117 @@
     async function loadVideos() {
       const list = document.getElementById('videos-list');
       list.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
-      const { data, error } = await db.from('Videos').select('*').order('created_at', { ascending: false }
+      const { data, error } = await db.from('Videos').select('*').order('created_at', { ascending: false });
+      if (error || !data || data.length === 0) {
+        list.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Пока видео нет</p></div>';
+        return;
+      }
+      list.innerHTML = data.map(v => {
+        const url = v.Ssylka || '';
+        let player = '';
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+          const id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+          player = `<iframe src="https://www.youtube.com/embed/${id}" allowfullscreen></iframe>`;
+        } else if (url.includes('vk.com')) {
+          player = `<iframe src="${url}" allowfullscreen></iframe>`;
+        } else {
+          player = `<video controls src="${escapeHtml(url)}"></video>`;
+        }
+        return `<div class="card"><h3>${escapeHtml(v.Nazvanie)}</h3>${player}</div>`;
+      }).join('');
+    }
+
+    async function loadStudents() {
+      const list = document.getElementById('students-list');
+      list.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
+      const { data, error } = await db.from('Students').select('*').order('Imya');
+      if (error || !data || data.length === 0) {
+        list.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Список учеников пуст</p></div>';
+        return;
+      }
+      list.innerHTML = data.map(s => `<div class="card student-card" onclick="showStudent(${s.id})">${s.Avatar ? `<img class="avatar" src="${escapeHtml(s.Avatar)}">` : `<div class="avatar">🍊</div>`}<div><div class="name">${escapeHtml(s.Imya)}</div></div></div>`).join('');
+      window._students = data;
+    }
+    function showStudent(id) {
+      const s = (window._students || []).find(x => x.id === id);
+      if (!s) return;
+      document.getElementById('student-title').textContent = s.Imya;
+      document.getElementById('student-content').innerHTML = `<div class="card" style="text-align:center;">${s.Avatar ? `<img src="${escapeHtml(s.Avatar)}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin:0 auto;">` : `<div style="width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#FFB347,#FF8C00);display:flex;align-items:center;justify-content:center;font-size:60px;margin:0 auto;">🍊</div>`}<h3 style="margin-top:16px;">${escapeHtml(s.Imya)}</h3><p style="margin-top:10px;">${escapeHtml(s.Opisanie)}</p></div>`;
+      openScreen('student');
+    }
+
+    async function openStream() {
+      openScreen('stream');
+      const content = document.getElementById('stream-content');
+      content.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Загрузка...</p></div>';
+      const { data } = await db.from('Settings').select('*').limit(1).single();
+      if (!data || !data.Is_live || !data.Stream_url) {
+        content.innerHTML = '<div class="empty"><span class="orange">🍊</span><p>Трансляция скоро начнётся</p></div>';
+        return;
+      }
+      const url = data.Stream_url;
+      if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        const id = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+        content.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1" allow="autoplay" allowfullscreen></iframe>`;
+      } else {
+        content.innerHTML = `<iframe src="${escapeHtml(url)}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+      }
+    }
+
+    async function saveStream() {
+      const url = document.getElementById('mod-stream-url').value;
+      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
+      if (existing) {
+        await db.from('Settings').update({ Stream_url: url, Is_live: true }).eq('id', existing.id);
+      } else {
+        await db.from('Settings').insert({ Stream_url: url, Is_live: true });
+      }
+      toast('Трансляция запущена!');
+    }
+    async function stopStream() {
+      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
+      if (existing) {
+        await db.from('Settings').update({ Is_live: false }).eq('id', existing.id);
+      }
+      toast('Трансляция остановлена');
+    }
+
+    async function saveLinks() {
+      const support = document.getElementById('mod-support').value;
+      const channel = document.getElementById('mod-channel').value;
+      const site = document.getElementById('mod-site').value;
+      const { data: existing } = await db.from('Settings').select('id').limit(1).single();
+      if (existing) {
+        await db.from('Settings').update({ support_url: support, channel_url: channel, site_url: site }).eq('id', existing.id);
+      } else {
+        await db.from('Settings').insert({ support_url: support, channel_url: channel, site_url: site });
+      }
+      links.support = support; links.channel = channel; links.site = site;
+      toast('Ссылки сохранены!');
+    }
+
+    async function addNews() {
+      const title = document.getElementById('mod-news-title').value;
+      const body = document.getElementById('mod-news-body').value;
+      const img = document.getElementById('mod-news-img').value;
+      if (!title) return toast('Введите заголовок');
+      const { error } = await db.from('News').insert({ Title: title, Text: body, Kartinka: img });
+      if (error) return toast('Ошибка: ' + error.message);
+      document.getElementById('mod-news-title').value = '';
+      document.getElementById('mod-news-body').value = '';
+      document.getElementById('mod-news-img').value = '';
+      toast('Новость опубликована!');
+    }
+    async function addVideo() {
+      const title = document.getElementById('mod-video-title').value;
+      const url = document.getElementById('mod-video-url').value;
+      if (!title || !url) return toast('Заполните название и ссылку');
+      const { error } = await db.from('Videos').insert({ Nazvanie: title, Ssylka: url });
+      if (error) return toast('Ошибка: ' + error.message);
+      document.getElementById('mod-video-title').value = '';
+      document.getElementById('mod-video-url').value = '';
+      toast('Видео добавлено!');
+    }
+  </script>
+</body>
+</html>
