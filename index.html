@@ -417,3 +417,11 @@
       const { data: existing } = await db.from('Settings').select('id').limit(1).single();
       if (existing) {
         await db.f
+
+
+        
+    // Открытие модератора по адресу #moderator
+    if (window.location.hash === '#moderator') {
+      openScreen('login');
+    }
+        
